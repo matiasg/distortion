@@ -91,8 +91,6 @@ pub mod distortion {
             let mut slice = self.dist_y.slice_mut(subslice);
             slice += &normal_window.mapv(|v| v * weight * deltay);
 
-            println!("la submat es {:?}", self.accum.slice(s![0..2, 0..2]));
-
             //let mut normal_window = Array2::<f32>::zeros((2 * WINDOW + 1, 2 * WINDOW + 1));
             //let mut i = -(WINDOW as i32);
             //for mut row in normal_window.lanes_mut(Axis(0)) {
@@ -139,7 +137,7 @@ mod tests {
     }
 
     #[test]
-    fn test_caca() {
+    fn test_update() {
         let dx = Array2::<f32>::zeros((20, 20));
         let dy = Array2::<f32>::zeros((20, 20));
         let mut dist = FieldDistortion::new(dx, dy);
