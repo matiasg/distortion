@@ -1,18 +1,21 @@
 extern crate ndarray;
 
-use ndarray::{arr1, arr2};
+use ndarray::{Array, Array2};
+use distortion::distortion::FieldDistortion;
 
 fn main() {
-    let a = arr2(&[ [1, 2, 3],
-                    [4, 5, 6],
-                    [7, 8, 9]]);
-    let b = arr2(&[ [9, 8, 7],
-                    [6, 5, 4],
-                    [3, 2, 1]]);
-    let v = arr1(&[1, 4, 5]);
+    let dx = Array2::<f32>::zeros((20, 20));
+    let dy = Array2::<f32>::zeros((20, 20));
+    let mut dist = FieldDistortion::new(dx, dy);
 
-    println!("a + b = {}", &a + &b);
-    println!("a * b = {:?}", &a.dot(&b));
-    println!("v = {:?}", v);
-    println!("a * v = {:?}", a.dot(&v));
+    dist.update((10., 12.), (11.1, 12.2), 1.0);
+
+    let submat = Array::from_shape_fn((3, 3), |(i, j)| {
+        dist.get((10 - 1 + i, 12 - 1 + j)).expect("oh, no")
+    });
+
+    println!("around (10, 12):\n{:?}", submat);
+
+    let xy = dist.get((11, 13)).expect("did not get value");
+    println!("around (10, 12): {:#?}", xy);
 }
