@@ -8,3 +8,4 @@ edition = "2021"
 [dependencies]
 ndarray = "0.15.0"
 num-traits = "0.2"
+approx = "0.5.1"
