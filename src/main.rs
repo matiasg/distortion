@@ -16,6 +16,6 @@ fn main() {
 
     println!("around (10, 12):\n{:?}", submat);
 
-    let xy = dist.get((11, 13)).expect("did not get value");
+    let xy = dist.get((10, 12)).expect("did not get value");
     println!("around (10, 12): {:#?}", xy);
 }
