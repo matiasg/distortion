@@ -1,10 +1,11 @@
 extern crate ndarray;
 extern crate num_traits;
-#[macro_use]
+
+#[cfg_attr(test, macro_use)]
 extern crate approx;
 
 pub mod distortion {
-    use ndarray::{s, Array, Array2, ArrayView, Axis};
+    use ndarray::{s, Array, Array2};
     use num_traits::{Float, ToPrimitive};
 
     pub struct FieldDistortion<T>
@@ -15,6 +16,7 @@ pub mod distortion {
         dist_x: Array2<T>,
         dist_y: Array2<T>,
         accum: Array2<T>,
+        w_size: usize,
     }
 
     impl<'a, T: Float> FieldDistortion<T> {
@@ -23,6 +25,7 @@ pub mod distortion {
                 accum: Array::<T, _>::ones(distx.raw_dim()),
                 dist_x: distx,
                 dist_y: disty,
+                w_size: 4,
             }
         }
 
@@ -32,6 +35,7 @@ pub mod distortion {
                 dist_x: distx.clone(),
                 dist_y: disty.clone(),
                 accum: Array::<T, _>::ones(shape),
+                w_size: 4,
             }
         }
 
@@ -66,21 +70,25 @@ pub mod distortion {
             expected: (f32, f32),
             weight: f32,
         ) -> Option<()> {
-            let WINDOW: usize = 4;
-
             let x0 = original.0.round().to_usize()?;
             let y0 = original.1.round().to_usize()?;
 
-            let normal_window = Array::from_shape_fn((2 * WINDOW + 1, 2 * WINDOW + 1), |(i, j)| {
-                f32::exp(
-                    -((i as i32 - WINDOW as i32).pow(2) + (j as i32 - WINDOW as i32).pow(2)) as f32,
-                )
-            });
+            let normal_window =
+                Array::from_shape_fn((2 * self.w_size + 1, 2 * self.w_size + 1), |(i, j)| {
+                    f32::exp(
+                        -((i as i32 - self.w_size as i32).pow(2)
+                            + (j as i32 - self.w_size as i32).pow(2))
+                            as f32,
+                    )
+                });
 
             let deltax = expected.0 - original.0;
             let deltay = expected.1 - original.1;
 
-            let subslice = s![x0 - WINDOW..x0 + WINDOW + 1, y0 - WINDOW..y0 + WINDOW + 1];
+            let subslice = s![
+                x0 - self.w_size..x0 + self.w_size + 1,
+                y0 - self.w_size..y0 + self.w_size + 1
+            ];
 
             let mut slice = self.accum.slice_mut(subslice);
             slice += &normal_window.mapv(|v| v * weight);
@@ -91,20 +99,20 @@ pub mod distortion {
             let mut slice = self.dist_y.slice_mut(subslice);
             slice += &normal_window.mapv(|v| v * weight * deltay);
 
-            //let mut normal_window = Array2::<f32>::zeros((2 * WINDOW + 1, 2 * WINDOW + 1));
-            //let mut i = -(WINDOW as i32);
+            //let mut normal_window = Array2::<f32>::zeros((2 * self.w_size + 1, 2 * self.w_size + 1));
+            //let mut i = -(self.w_size as i32);
             //for mut row in normal_window.lanes_mut(Axis(0)) {
-            //    let mut j = -(WINDOW as i32);
+            //    let mut j = -(self.w_size as i32);
             //    for e in row.iter_mut() {
             //        *e += f32::exp(-(i.pow(2) + j.pow(2)) as f32) ;
             //        j += 1;
             //    }
             //    i += 1;
             //}
-            //let left = i32::max(0i32, x0 - WINDOW);
-            //let right = i32::min(self.dist_x.shape()[1].to_i32()?, x0 + WINDOW);
-            //let top = i32::max(0i32, y0 - WINDOW);
-            //let bottom = i32::min(self.dist_x.shape()[0].to_i32()?, y0 + WINDOW);
+            //let left = i32::max(0i32, x0 - self.w_size);
+            //let right = i32::min(self.dist_x.shape()[1].to_i32()?, x0 + self.w_size);
+            //let top = i32::max(0i32, y0 - self.w_size);
+            //let bottom = i32::min(self.dist_x.shape()[0].to_i32()?, y0 + self.w_size);
 
             Some(())
         }
