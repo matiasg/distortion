@@ -158,4 +158,14 @@ mod tests {
         assert_abs_diff_eq!(xy.0, 11.148, epsilon = 1e-3f32);
         assert_abs_diff_eq!(xy.1, 13.027, epsilon = 1e-3f32);
     }
+
+    #[test]
+    fn test_close_to_border() {
+        let dx = Array2::<f32>::zeros((10, 10));
+        let dy = Array2::<f32>::zeros((10, 10));
+        let mut dist = FieldDistortion::new(dx, dy);
+
+        dist.update((1.0, 1.0), (1.1, 0.9), 1.0);
+        assert_eq!(dist.get((1, 1)), Some((1.1, 0.9)));
+    }
 }
